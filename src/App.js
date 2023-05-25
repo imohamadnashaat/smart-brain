@@ -19,8 +19,27 @@ class App extends Component {
       box: {},
       route: 'signin',
       isSignedIn: false,
+      user: {
+        id: '',
+        name: '',
+        email: '',
+        entries: 0,
+        joined: '',
+      },
     };
   }
+
+  loadUser = (data) => {
+    this.setState({
+      user: {
+        id: data.id,
+        name: data.name,
+        email: data.email,
+        entries: data.entries,
+        joined: data.joined,
+      },
+    });
+  };
 
   calculateFaceLocation = (data) => {
     const clarifaiFace =
@@ -44,51 +63,30 @@ class App extends Component {
     this.setState({ input: event.target.value });
   };
 
-  onButtonSubmit = () => {
+  onSubmitImage = () => {
     this.setState({ imageUrl: this.state.input });
-
-    // HEADS UP! Sometimes the Clarifai Models can be down or not working as they are constantly getting updated.
-    // A good way to check if the model you are using is up, is to check them on the clarifai website. For example,
-    // for the Face Detect Mode: https://www.clarifai.com/models/face-detection
-    // If that isn't working, then that means you will have to wait until their servers are back up.
-
-    const PAT = '';
-    const USER_ID = '';
-    const APP_ID = '';
-    const MODEL_ID = 'face-detection';
-    const IMAGE_URL = this.state.input;
-
-    const raw = JSON.stringify({
-      user_app_id: {
-        user_id: USER_ID,
-        app_id: APP_ID,
-      },
-      inputs: [
-        {
-          data: {
-            image: {
-              url: IMAGE_URL,
-            },
-          },
-        },
-      ],
-    });
-
-    const requestOptions = {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        Authorization: 'Key ' + PAT,
-      },
-      body: raw,
-    };
-
-    fetch(
-      'https://api.clarifai.com/v2/models/' + MODEL_ID + '/outputs',
-      requestOptions
-    )
+    // Call Clarifai Image endpoint
+    fetch('http://localhost:8000/clarifaiImage', {
+      method: 'post',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        imageUrl: this.state.input,
+      }),
+    })
       .then((response) => response.json())
-      .then((result) => this.displayFaceBox(this.calculateFaceLocation(result)))
+      .then((result) => {
+        // Update user if the response status code is 10000
+        if (result.status.code === 10000) {
+          fetch('http://localhost:8000/image', {
+            method: 'put',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: this.state.user.id }),
+          })
+            .then((response) => response.json())
+            .then((user) => this.setState({ user }));
+        }
+        this.displayFaceBox(this.calculateFaceLocation(result));
+      })
       .catch((error) => console.log('error', error));
   };
 
@@ -102,7 +100,7 @@ class App extends Component {
   };
 
   render() {
-    const { isSignedIn, route, imageUrl, box } = this.state;
+    const { user, isSignedIn, route, imageUrl, box } = this.state;
     return (
       <div className="App">
         <ParticlesBg type="fountain" bg={true} />
@@ -113,17 +111,20 @@ class App extends Component {
         {isSignedIn || route === 'home' ? (
           <div>
             <Logo />
-            <Rank />
+            <Rank user={user} />
             <ImageLinkForm
-              onButtonSubmit={this.onButtonSubmit}
+              onSubmitImage={this.onSubmitImage}
               onInputChange={this.onInputChange}
             />
             <FaceRecognition box={box} imageUrl={imageUrl} />
           </div>
         ) : route === 'signin' ? (
-          <Signin onRouteChange={this.onRouteChange} />
+          <Signin loadUser={this.loadUser} onRouteChange={this.onRouteChange} />
         ) : (
-          <Register onRouteChange={this.onRouteChange} />
+          <Register
+            loadUser={this.loadUser}
+            onRouteChange={this.onRouteChange}
+          />
         )}
       </div>
     );
