@@ -7,8 +7,43 @@ class Register extends React.Component {
       email: '',
       password: '',
       name: '',
+      nameError: '',
+      emailError: '',
+      passwordError: '',
     };
   }
+
+  validateForm = () => {
+    let isValid = true;
+    const { name, email, password } = this.state;
+
+    if (name.length < 4) {
+      this.setState({
+        nameError: 'Name should be 4 characters at least.',
+      });
+      isValid = false;
+    } else {
+      this.setState({ nameError: '' });
+    }
+
+    if (!/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(email)) {
+      this.setState({ emailError: 'Invalid email address.' });
+      isValid = false;
+    } else {
+      this.setState({ emailError: '' });
+    }
+
+    if (password.length < 8) {
+      this.setState({
+        passwordError: 'Password should be at least 8 characters long.',
+      });
+      isValid = false;
+    } else {
+      this.setState({ passwordError: '' });
+    }
+
+    return isValid;
+  };
 
   onNameChange = (event) => {
     this.setState({ name: event.target.value });
@@ -23,25 +58,31 @@ class Register extends React.Component {
   };
 
   onSubmitSignIn = () => {
-    fetch('http://localhost:8000/register', {
-      method: 'post',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: this.state.email,
-        password: this.state.password,
-        name: this.state.name,
-      }),
-    })
-      .then((response) => response.json())
-      .then((user) => {
-        if (user) {
-          this.props.loadUser(user);
-          this.props.onRouteChange('home');
-        }
-      });
+    const isValid = this.validateForm();
+
+    if (isValid) {
+      fetch('http://localhost:8000/register', {
+        method: 'post',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: this.state.email,
+          password: this.state.password,
+          name: this.state.name,
+        }),
+      })
+        .then((response) => response.json())
+        .then((user) => {
+          if (user.id) {
+            this.props.loadUser(user);
+            this.props.onRouteChange('home');
+          }
+        });
+    }
   };
 
   render() {
+    const { nameError, emailError, passwordError } = this.state;
+
     return (
       <article className="br3 ba b--black-10 mv4 w-100 w-50-m w-25-l mw6 shadow-5 center">
         <main className="pa4 black-80">
@@ -58,7 +99,9 @@ class Register extends React.Component {
                   name="name"
                   id="name"
                   onChange={this.onNameChange}
+                  required
                 />
+                {nameError && <p className="error-message">{nameError}</p>}
               </div>
               <div className="mt3">
                 <label className="db fw6 lh-copy f6" htmlFor="email-address">
@@ -70,7 +113,9 @@ class Register extends React.Component {
                   name="email-address"
                   id="email-address"
                   onChange={this.onEmailChange}
+                  required
                 />
+                {emailError && <p className="error-message">{emailError}</p>}
               </div>
               <div className="mv3">
                 <label className="db fw6 lh-copy f6" htmlFor="password">
@@ -82,7 +127,11 @@ class Register extends React.Component {
                   name="password"
                   id="password"
                   onChange={this.onPasswordChange}
+                  required
                 />
+                {passwordError && (
+                  <p className="error-message">{passwordError}</p>
+                )}
               </div>
             </fieldset>
             <div className="">
