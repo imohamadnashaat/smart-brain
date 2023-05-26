@@ -6,8 +6,21 @@ class Signin extends React.Component {
     this.state = {
       signInEmail: '',
       signInPassword: '',
+      emailError: '',
     };
   }
+
+  validateForm = () => {
+    const { signInEmail } = this.state;
+
+    if (!/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(signInEmail)) {
+      this.setState({ emailError: 'Invalid email address.' });
+      return false;
+    }
+
+    this.setState({ emailError: '' });
+    return true;
+  };
 
   onEmailChange = (event) => {
     this.setState({ signInEmail: event.target.value });
@@ -18,25 +31,31 @@ class Signin extends React.Component {
   };
 
   onSubmitSignIn = () => {
-    fetch('http://localhost:8000/signin', {
-      method: 'post',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: this.state.signInEmail,
-        password: this.state.signInPassword,
-      }),
-    })
-      .then((response) => response.json())
-      .then((user) => {
-        if (user.id) {
-          this.props.loadUser(user);
-          this.props.onRouteChange('home');
-        }
-      });
+    const isValid = this.validateForm();
+
+    if (isValid) {
+      fetch('http://localhost:8000/signin', {
+        method: 'post',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: this.state.signInEmail,
+          password: this.state.signInPassword,
+        }),
+      })
+        .then((response) => response.json())
+        .then((user) => {
+          if (user.id) {
+            this.props.loadUser(user);
+            this.props.onRouteChange('home');
+          }
+        });
+    }
   };
 
   render() {
     const { onRouteChange } = this.props;
+    const { emailError } = this.state;
+
     return (
       <article className="br3 ba b--black-10 mv4 w-100 w-50-m w-25-l mw6 shadow-5 center">
         <main className="pa4 black-80">
@@ -54,6 +73,7 @@ class Signin extends React.Component {
                   id="email-address"
                   onChange={this.onEmailChange}
                 />
+                {emailError && <p className="error-message">{emailError}</p>}
               </div>
               <div className="mv3">
                 <label className="db fw6 lh-copy f6" htmlFor="password">
