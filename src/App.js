@@ -10,6 +10,7 @@ import ImageLinkForm from './components/image-link-form/image-link-form.componen
 import FaceRecognition from './components/face-recognition/face-recognition.component';
 import './App.css';
 
+const API_URL = 'https://smart-brain-api-yzoo.onrender.com';
 const initialState = {
   input: '',
   imageUrl: '',
@@ -68,7 +69,7 @@ class App extends Component {
   onSubmitImage = () => {
     this.setState({ imageUrl: this.state.input });
     // Call Clarifai Image endpoint
-    fetch('http://localhost:8000/clarifaiImage', {
+    fetch(`${API_URL}/clarifaiImage`, {
       method: 'post',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -79,7 +80,7 @@ class App extends Component {
       .then((result) => {
         // Update user if the response status code is 10000
         if (result.status.code === 10000) {
-          fetch('http://localhost:8000/image', {
+          fetch(`${API_URL}/image`, {
             method: 'put',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id: this.state.user.id }),

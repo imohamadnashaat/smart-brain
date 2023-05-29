@@ -1,5 +1,7 @@
 import React from 'react';
 
+const API_URL = 'https://smart-brain-api-yzoo.onrender.com';
+
 class Signin extends React.Component {
   constructor(props) {
     super(props);
@@ -34,7 +36,7 @@ class Signin extends React.Component {
     const isValid = this.validateForm();
 
     if (isValid) {
-      fetch('http://localhost:8000/signin', {
+      fetch(`${API_URL}/signin`, {
         method: 'post',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
