@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import ParticlesBg from 'particles-bg';
 
 import Navigation from './components/navigation/navigation.component';
@@ -8,9 +8,9 @@ import Logo from './components/logo/logo.component';
 import Rank from './components/rank/rank.component';
 import ImageLinkForm from './components/image-link-form/image-link-form.component';
 import FaceRecognition from './components/face-recognition/face-recognition.component';
+import { APIContext } from './contexts/api.context';
 import './App.css';
 
-const API_URL = 'https://smart-brain-api-yzoo.onrender.com';
 const initialState = {
   input: '',
   imageUrl: '',
@@ -33,6 +33,7 @@ const App = () => {
   const [route, setRoute] = useState('signin');
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [user, setUser] = useState(initialState.user);
+  const API_URL = useContext(APIContext);
 
   const loadUser = (data) => {
     setUser({
@@ -76,7 +77,7 @@ const App = () => {
 
   const onSubmitImage = () => {
     setImageUrl(input);
-    fetch(`${API_URL}/clarifaiImage`, {
+    fetch(`${API_URL}/images`, {
       method: 'post',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -86,7 +87,7 @@ const App = () => {
       .then((response) => response.json())
       .then((result) => {
         if (result.status.code === 10000) {
-          fetch(`${API_URL}/image`, {
+          fetch(`${API_URL}/images`, {
             method: 'put',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id: user.id }),

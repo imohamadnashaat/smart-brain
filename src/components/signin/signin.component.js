@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
-
-const API_URL = 'https://smart-brain-api-yzoo.onrender.com';
+import React, { useState, useContext } from 'react';
+import { APIContext } from '../../contexts/api.context';
 
 const Signin = ({ onRouteChange, loadUser }) => {
   const [signInEmail, setSignInEmail] = useState('');
   const [signInPassword, setSignInPassword] = useState('');
   const [emailError, setEmailError] = useState('');
   const [loginError, setLoginError] = useState('');
+  const API_URL = useContext(APIContext);
 
   const validateForm = () => {
     if (!/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(signInEmail)) {
@@ -30,7 +30,7 @@ const Signin = ({ onRouteChange, loadUser }) => {
     const isValid = validateForm();
 
     if (isValid) {
-      fetch(`${API_URL}/signin`, {
+      fetch(`${API_URL}/auth/signin`, {
         method: 'post',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
