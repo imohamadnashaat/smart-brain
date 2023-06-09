@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import ParticlesBg from 'particles-bg';
+import jwtDecode from 'jwt-decode';
 
 import Navigation from './components/navigation/navigation.component';
 import Register from './components/register/register.component';
@@ -33,6 +34,7 @@ const App = () => {
   const [route, setRoute] = useState('signin');
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [user, setUser] = useState(initialState.user);
+  const [token, setToken] = useState('');
   const API_URL = useContext(APIContext);
 
   const loadUser = (data) => {
@@ -44,6 +46,44 @@ const App = () => {
       joined: data.joined,
     });
   };
+
+  useEffect(() => {
+    const storedToken = localStorage.getItem('token');
+    if (storedToken) {
+      setToken(storedToken);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (token) {
+      localStorage.setItem('token', token);
+    } else {
+      localStorage.removeItem('token');
+    }
+  }, [token]);
+
+  useEffect(() => {
+    if (token) {
+      const decodedToken = jwtDecode(token);
+      const userId = decodedToken.sub;
+      fetch(`${API_URL}/users/${userId}`, {
+        method: 'get',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      })
+        .then((response) => response.json())
+        .then((user) => {
+          if (user.id) {
+            setUser(user);
+            setIsSignedIn(true);
+            setRoute('home');
+          }
+        })
+        .catch((error) => console.log('error', error));
+    }
+  }, [token]);
 
   useEffect(() => {
     if (route === 'home') {
@@ -102,12 +142,14 @@ const App = () => {
 
   const onRouteChange = (route) => {
     if (route === 'signout') {
+      setToken('');
       setUser(initialState.user);
       setInput(initialState.input);
       setImageUrl(initialState.imageUrl);
       setBox(initialState.box);
       setRoute(initialState.route);
       setIsSignedIn(initialState.isSignedIn);
+      localStorage.removeItem('token');
     }
     setRoute(route);
   };

@@ -74,6 +74,7 @@ const Register = ({ onRouteChange, loadUser }) => {
         })
         .then((user) => {
           if (user.id) {
+            localStorage.setItem('token', user.token);
             loadUser(user);
             onRouteChange('home');
           } else if (user.error) {
