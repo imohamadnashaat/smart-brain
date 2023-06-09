@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import ParticlesBg from 'particles-bg';
 import jwtDecode from 'jwt-decode';
+import axios from 'axios';
 
 import Navigation from './components/navigation/navigation.component';
 import Register from './components/register/register.component';
@@ -63,27 +64,31 @@ const App = () => {
   }, [token]);
 
   useEffect(() => {
-    if (token) {
-      const decodedToken = jwtDecode(token);
-      const userId = decodedToken.sub;
-      fetch(`${API_URL}/users/${userId}`, {
-        method: 'get',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      })
-        .then((response) => response.json())
-        .then((user) => {
-          if (user.id) {
-            setUser(user);
+    const fetchUserData = async () => {
+      try {
+        if (token) {
+          const decodedToken = jwtDecode(token);
+          const userId = decodedToken.sub;
+          const response = await axios.get(`${API_URL}/users/${userId}`, {
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          const userData = response.data;
+          if (userData.id) {
+            setUser(userData);
             setIsSignedIn(true);
             setRoute('home');
           }
-        })
-        .catch((error) => console.log('error', error));
-    }
-  }, [token]);
+        }
+      } catch (error) {
+        console.log('Error:', error);
+      }
+    };
+
+    fetchUserData();
+  }, [token, API_URL]);
 
   useEffect(() => {
     if (route === 'home') {
@@ -115,29 +120,39 @@ const App = () => {
     setInput(event.target.value);
   };
 
-  const onSubmitImage = () => {
-    setImageUrl(input);
-    fetch(`${API_URL}/images`, {
-      method: 'post',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        imageUrl: input,
-      }),
-    })
-      .then((response) => response.json())
-      .then((result) => {
-        if (result.status.code === 10000) {
-          fetch(`${API_URL}/images`, {
-            method: 'put',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: user.id }),
-          })
-            .then((response) => response.json())
-            .then((updatedUser) => setUser(updatedUser));
+  const onSubmitImage = async () => {
+    try {
+      setImageUrl(input);
+      const result = await axios.post(
+        `${API_URL}/images`,
+        {
+          imageUrl: input,
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
         }
-        displayFaceBox(calculateFaceLocation(result));
-      })
-      .catch((error) => console.log('error', error));
+      );
+
+      if (result.status.code === 10000) {
+        const updatedUser = await axios.put(
+          `${API_URL}/images`,
+          { id: user.id },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+
+        setUser(updatedUser.data);
+      }
+
+      displayFaceBox(calculateFaceLocation(result.data));
+    } catch (error) {
+      console.log('Error:', error);
+    }
   };
 
   const onRouteChange = (route) => {

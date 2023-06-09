@@ -1,4 +1,6 @@
 import React, { useState, useContext } from 'react';
+import axios from 'axios';
+
 import { APIContext } from '../../contexts/api.context';
 
 const Signin = ({ onRouteChange, loadUser }) => {
@@ -26,39 +28,31 @@ const Signin = ({ onRouteChange, loadUser }) => {
     setSignInPassword(event.target.value);
   };
 
-  const onSubmitSignIn = () => {
+  const onSubmitSignIn = async () => {
     const isValid = validateForm();
 
     if (isValid) {
-      fetch(`${API_URL}/auth/signin`, {
-        method: 'post',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      try {
+        const response = await axios.post(`${API_URL}/auth/signin`, {
           email: signInEmail,
           password: signInPassword,
-        }),
-      })
-        .then((response) => {
-          if (response.ok || response.status === 400) {
-            return response.json();
-          } else {
-            throw new Error(
-              'Unable to connect to the server. Please try again later.'
-            );
-          }
-        })
-        .then((user) => {
+        });
+
+        if (response.status === 200) {
+          const user = response.data;
           if (user.id) {
             localStorage.setItem('token', user.token);
             loadUser(user);
             onRouteChange('home');
-          } else {
-            setLoginError('Invalid email or password.');
           }
-        })
-        .catch((error) => {
+        }
+      } catch (error) {
+        if (error.response.status === 400 || error.response.status === 401) {
+          setLoginError(error.response.data.message);
+        } else {
           setLoginError(error.message);
-        });
+        }
+      }
     }
   };
 
