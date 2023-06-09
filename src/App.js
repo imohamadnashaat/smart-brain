@@ -66,7 +66,7 @@ const App = () => {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        if (token) {
+        if (token !== '') {
           const decodedToken = jwtDecode(token);
           const userId = decodedToken.sub;
           const response = await axios.get(`${API_URL}/users/${userId}`, {
@@ -131,17 +131,19 @@ const App = () => {
         {
           headers: {
             'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
           },
         }
       );
 
-      if (result.status.code === 10000) {
+      if (result.data.status.code === 10000) {
         const updatedUser = await axios.put(
           `${API_URL}/images`,
           { id: user.id },
           {
             headers: {
               'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
             },
           }
         );
